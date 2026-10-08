@@ -1,0 +1,182 @@
+
+:root {
+    --fonte: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+}
+
+* {
+    box-sizing: border-box;
+    font-family: var(--fonte);
+}
+
+body {
+    margin: 0;
+    background: #F5F7F8;
+    color: #304C64;
+}
+
+.app {
+    display: flex;
+    height: 100vh;
+}
+
+.painel {
+    width: 340px;
+    flex-shrink: 0;
+    margin: 20px 0 20px 20px;
+    /* align-self: flex-start; */
+    padding: 24px;
+    background: #FFFFFF;
+    border: 1px solid #E2E8EA;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+
+}
+
+.painel h1 {
+    font-size: 20px;
+    margin: 0 0 12px;
+}
+
+.painel label {
+    font-size: 14px;
+    font-weight: 600;
+    margin-top: 12px;
+}
+
+.input {
+    --Dash-Stroke-Strong: #E2480C;
+    --Dash-Fill-Interactive-Strong: #E2480C;
+}
+
+.botao {
+    margin-top: 20px;
+    padding: 10px 16px;
+    border: none;
+    border-radius: 6px;
+    background: #26788E;
+    color: #FFFFFF;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.botao:hover {
+    background: #304C64;
+}
+
+.dash-slider-root {
+    --Dash-Fill-Interactive-Strong: #E2480C;
+    --Dash-Fill-Primary-Active: #E2480C;
+}
+
+.main {
+    flex: 1;
+    min-width: 0;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    overflow-y: auto;
+    background: #F5F7F8;
+}
+
+.div_mapa{
+    flex: none;
+    height: 55vh;
+    min-height: 300px;
+    border-radius: 8px;
+    overflow: hidden;
+    border: 1px solid #E2E8EA;
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+
+}
+
+.mapa {
+    width: 100%;
+    height: 100%;
+}
+
+.section_tabela {
+    background: #FFFFFF;
+    border-radius: 8px;
+    border: 1px solid #E2E8EA;
+    padding: 0; 
+    overflow: hidden; 
+    flex: 1;
+    min-height: 200px;
+    box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+
+}
+
+.section_tabela .dash-table-container,
+.section_tabela .dash-spreadsheet-container,
+.section_tabela .dash-spreadsheet-inner,
+.section_tabela table {
+    width: 100% !important;
+    margin: 0 !important;
+}
+
+.section_tabela .dash-header {
+    background-color: #A4CCD4 !important;
+    color: #304C64;
+    border: none !important;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    padding: 14px 20px !important;
+    text-align: left !important;
+}
+
+/* espaço entre a setinha de ordenar e o nome da coluna */
+.section_tabela .column-header--sort {
+    margin-right: 6px;
+    opacity: 0.6;
+}
+
+.section_tabela .dash-cell {
+    text-align: left !important;
+    padding: 10px 20px !important;
+    border: none;
+    border-bottom: 1px solid #E2E8EA;
+}
+
+.section_tabela .dash-data{
+    border: none;
+    border-bottom: 1px solid #E2E8EA;
+}
+
+@media (max-width: 800px) {
+    .app {
+        flex-direction: column;
+        height: auto;
+    }
+
+    .painel {
+        width: 100%;
+        border-right: none;
+        border-bottom: 1px solid #E2E8EA;
+    }
+
+    .mapa-wrap {
+        height: 300px;
+        flex: none;
+    }
+}
+
+/* esconde os botões - e + do input de numero */
+.dash-input-stepper {
+    display: none !important;
+}
+
+.dash-input-element[type="number"]::-webkit-outer-spin-button,
+.dash-input-element[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+.dash-input-element[type="number"] {
+    -moz-appearance: textfield;
+    appearance: textfield;
+}
