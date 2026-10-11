@@ -1,9 +1,9 @@
 import csv
 import dash
 import dash_leaflet as dl
-from dash import html, Output, Input, dash_table, dcc
+from dash import html, Output, Input, dash_table, dcc, State
 from dash.dash_table.Format import Format, Scheme
-
+from auxiliares.simularGeracaoEntregadores import simulaGeracaoEntregadores
 
 # verificar se vai manter abrir o navegador sozinho
 from threading import Timer
@@ -43,6 +43,7 @@ app.layout = html.Div(className="app", children=[
         html.Label("Bares e restaurantes:"),
 
         dcc.Dropdown(
+            id="dropdown-bar",
             className="input",
             options=opcoes_bares,
             placeholder="Selecione um bar ou restaurante...",
@@ -52,8 +53,8 @@ app.layout = html.Div(className="app", children=[
         dcc.Slider(id="raio", min=0.5, max=2, step=0.5, value=1, marks={0.5: "0,5", 1: "1", 1.5: "1,5", 2: "2",},),
 
         html.Label("Quantidade de entregadores disponíveis:"),
-        dcc.Input(type="number", value=n_padrao, className="input"),
-        html.Button("Gerar Entregadores", className="botao"),
+        dcc.Input(id="input-qtd-entregadores", type="number", value=n_padrao, className="input"),
+        html.Button("Gerar Entregadores", id="botao-gerar-entregadores", className="botao", n_clicks=0),
     ]),
 
     html.Main(className="main", children=[
@@ -84,7 +85,44 @@ app.layout = html.Div(className="app", children=[
         ]),
     ]),
 ])
+# Callback pra ele ficar escutando quando o usuario clickar no botao de gerar entregadores
+@app.callback(
+    Output("camada", "children"),
+    Input("botao-gerar-entregadores", "n_clicks"),
+    State("dropdown-bar", "value"),
+    State("input-qtd-entregadores", "value"),
+    prevent_initial_call=True
+)
+# Funcão a ser chamada ao clicar em gerar entregadores
+def atualizar_entregadores(n_clicks, bar_selecionado_id, qtd_entregadores):
+    # Vê se os campos tao preenchidos
+    if not bar_selecionado_id or not qtd_entregadores:
+        return []
+    # Provisoriamente ta em cima da praca da liberdade
+    localizacao_restaurante_provisorio = {"latitude": -19.9313067, "longitude": -43.9374207}
 
+    entregadores = simulaGeracaoEntregadores(qtd_entregadores, localizacao_restaurante_provisorio)
+    
+    marcadores = []
+    
+    # Um marker pro restaurante
+    marcadores.append(
+        dl.Marker(
+            position=[localizacao_restaurante_provisorio["latitude"], localizacao_restaurante_provisorio["longitude"]],
+            children=[dl.Tooltip("Restaurante Selecionado")]
+        )
+    )
+    
+    # Adiciona os marcadores dos entregadores gerados
+    for i, entregador in enumerate(entregadores):
+        marcadores.append(
+            dl.Marker(
+                position=[entregador["latitude"], entregador["longitude"]],
+                children=[dl.Tooltip(f"Entregador {i+1}")]
+            )
+        )
+        
+    return marcadores
 
 if __name__ == "__main__":
     Timer(1, lambda: webbrowser.open_new("http://127.0.0.1:8050/")).start()
