@@ -1,4 +1,4 @@
-import csv
+import pandas as pd
 import dash
 import dash_leaflet as dl
 from dash import html, Output, Input, dash_table, dcc, State
@@ -16,22 +16,25 @@ n_padrao = 20
 
 
 def carregar_nomes(arquivo_bares):
-    opcoes = []
-    with open(arquivo_bares, encoding="utf-8") as f:
-        for linha in csv.DictReader(f):
-            fantasia = linha["NOME_FANTASIA"].strip()
-            nome = fantasia or linha["NOME"].strip()
-            bairro = linha["NOME_BAIRRO"].strip()
-            item = f"{nome} - {bairro}" if bairro else nome
-            if not fantasia and nome[:1].isdigit():
-                grupo = 2
-            elif not nome[:1].isalnum():
-                grupo = 1
-            else:
-                grupo = 0
-            opcoes.append((grupo, item, linha["_id"]))
-    opcoes.sort()
-    return [{"label": item, "value": id_bar} for _, item, id_bar in opcoes]
+    bares = pd.read_csv(arquivo_bares, dtype=str, keep_default_na=False)
+    
+    fantasia = bares["NOME_FANTASIA"].str.strip()
+    # se o nome fantasia tiver somente caracteres especiais, usa o nome jurídico para identificação do bar
+    fantasia = fantasia.where(fantasia.str.contains(r"[^\W_]"), "")
+    nome =fantasia.where(fantasia != "", bares["NOME"].str.strip())
+    bairro = bares["NOME_BAIRRO"].str.strip()
+    desc_logradouro = bares["DESC_LOGRADOURO"].str.strip()
+    logradouro = bares["NOME_LOGRADOURO"].str.strip()
+    numero = bares["NUMERO_IMOVEL"].str.strip()
+    bares["item"] = nome.where(bairro == "", nome + " - " + bairro + " (" + desc_logradouro + " " + logradouro + ", " + numero + ")")
+
+    primeira = nome.str[:1]
+    bares["grupo"] = 0
+    bares.loc[~primeira.str.isalnum(), "grupo"] = 1
+    bares.loc[(fantasia == "") & primeira.str.isdigit(), "grupo"] = 2
+
+    bares = bares.sort_values(["grupo", "item", "_id"])
+    return [{"label": item, "value": id_bar} for item, id_bar in zip(bares["item"], bares["_id"])]
 
 opcoes_bares = carregar_nomes(arquivo_bares)
 
