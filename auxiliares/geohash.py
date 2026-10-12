@@ -5,7 +5,7 @@ for i, c in enumerate(alfabeto):
 niveis_padrao = 8
 
 
-def codificar(latitude, longitude, niveis=niveis_padrao):
+def gerarHash(latitude, longitude, niveis=niveis_padrao):
     maior_latitude = 90.0
     menor_latitude = -90.0
     maior_longitude = 180.0
@@ -40,7 +40,7 @@ def codificar(latitude, longitude, niveis=niveis_padrao):
     return geohash_final
 
 
-def decodificar(geohash_final):
+def decodificarHash(geohash_final):
     maior_latitude = 90.0
     menor_latitude = -90.0
     maior_longitude = 180.0
