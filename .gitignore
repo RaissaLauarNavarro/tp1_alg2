@@ -1,6 +1,5 @@
 /.venv
 *.json
 *.pyc
+/data/grafo_bh.graphml
 */__pycache__
-/__pycache__
-*/cache
