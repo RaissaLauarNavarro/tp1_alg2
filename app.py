@@ -1,10 +1,11 @@
 import pandas as pd
 import dash
 import dash_leaflet as dl
+import osmnx as ox
 from dash import html, Output, Input, dash_table, dcc, State
 from dash.dash_table.Format import Format, Scheme
 from auxiliares.simularGeracaoEntregadores import simulaGeracaoEntregadores
-
+from auxiliares.descomprime_grafo import descomprime_grafo
 # verificar se vai manter abrir o navegador sozinho
 from threading import Timer
 import webbrowser
@@ -12,6 +13,7 @@ import webbrowser
 
 coordenada_central = (-19.9191, -43.9386)
 arquivo_bares = "data/bares.csv"
+arquivo_mapa_bh = "data/grafo_bh.graphml"
 n_padrao = 20
 
 
@@ -37,7 +39,8 @@ def carregar_nomes(arquivo_bares):
     return [{"label": item, "value": id_bar} for item, id_bar in zip(bares["item"], bares["_id"])]
 
 opcoes_bares = carregar_nomes(arquivo_bares)
-
+descomprime_grafo()
+grafo = ox.load_graphml(arquivo_mapa_bh)
 
 app = dash.Dash()
 app.layout = html.Div(className="app", children=[
@@ -104,7 +107,7 @@ def atualizar_entregadores(n_clicks, bar_selecionado_id, qtd_entregadores):
     # Provisoriamente ta em cima da praca da liberdade
     localizacao_restaurante_provisorio = {"latitude": -19.9313067, "longitude": -43.9374207}
 
-    entregadores = simulaGeracaoEntregadores(qtd_entregadores, localizacao_restaurante_provisorio)
+    entregadores = simulaGeracaoEntregadores(qtd_entregadores, localizacao_restaurante_provisorio, grafo)
     
     marcadores = []
     
