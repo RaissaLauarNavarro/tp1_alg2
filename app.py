@@ -6,6 +6,7 @@ from dash import html, Output, Input, dash_table, dcc, State
 from dash.dash_table.Format import Format, Scheme
 from auxiliares.simularGeracaoEntregadores import simulaGeracaoEntregadores
 from auxiliares.descomprime_grafo import descomprime_grafo
+from auxiliares.buscaCoordenadasBar import busca_coordenadas_bar
 # verificar se vai manter abrir o navegador sozinho
 from threading import Timer
 import webbrowser
@@ -105,16 +106,17 @@ def atualizar_entregadores(n_clicks, bar_selecionado_id, qtd_entregadores):
     if not bar_selecionado_id or not qtd_entregadores:
         return []
     # Provisoriamente ta em cima da praca da liberdade
-    localizacao_restaurante_provisorio = {"latitude": -19.9313067, "longitude": -43.9374207}
+    lat, long = busca_coordenadas_bar(bar_selecionado_id)
+    localizacao_restaurante = {"latitude": float(lat), "longitude": float(long)}
 
-    entregadores = simulaGeracaoEntregadores(qtd_entregadores, localizacao_restaurante_provisorio, grafo)
+    entregadores = simulaGeracaoEntregadores(qtd_entregadores, localizacao_restaurante, grafo)
     
     marcadores = []
     
     # Um marker pro restaurante
     marcadores.append(
         dl.Marker(
-            position=[localizacao_restaurante_provisorio["latitude"], localizacao_restaurante_provisorio["longitude"]],
+            position=[localizacao_restaurante["latitude"], localizacao_restaurante["longitude"]],
             children=[dl.Tooltip("Restaurante Selecionado")]
         )
     )
