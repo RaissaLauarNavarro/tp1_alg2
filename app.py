@@ -7,15 +7,24 @@ from dash.dash_table.Format import Format, Scheme
 from auxiliares.simularGeracaoEntregadores import simulaGeracaoEntregadores
 from auxiliares.descomprime_grafo import descomprime_grafo
 from auxiliares.buscaCoordenadasBar import busca_coordenadas_bar
+from auxiliares.tree import Tree
 # verificar se vai manter abrir o navegador sozinho
 from threading import Timer
 import webbrowser
 
 
 coordenada_central = (-19.9191, -43.9386)
-arquivo_bares = "data/bares.csv"
+arquivo_bares = "data/bares_com_coordenadas.csv"
 arquivo_mapa_bh = "data/grafo_bh.graphml"
 n_padrao = 20
+icone_vermelho = {
+    "iconUrl": "https://cdn.jsdelivr.net/gh/pointhi/leaflet-color-markers@master/img/marker-icon-2x-red.png",
+    "shadowUrl": "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png",
+    "iconSize": [25, 41],
+    "iconAnchor": [12, 41],
+    "tooltipAnchor": [16, -28],
+    "shadowSize": [41, 41],
+}
 
 
 def carregar_nomes(arquivo_bares):
@@ -42,6 +51,7 @@ def carregar_nomes(arquivo_bares):
 opcoes_bares = carregar_nomes(arquivo_bares)
 descomprime_grafo()
 grafo = ox.load_graphml(arquivo_mapa_bh)
+arvoreEntregadores = Tree()
 
 app = dash.Dash()
 app.layout = html.Div(className="app", children=[
@@ -92,45 +102,59 @@ app.layout = html.Div(className="app", children=[
         ]),
     ]),
 ])
-# Callback pra ele ficar escutando quando o usuario clickar no botao de gerar entregadores
+
+
+# Callback pra ele ficar escutando quando o usuario selecionar um bar ou clickar no botao de gerar entregadores
 @app.callback(
     Output("camada", "children"),
+    Output("mapa", "center"),
     Input("botao-gerar-entregadores", "n_clicks"),
-    State("dropdown-bar", "value"),
+    Input("dropdown-bar", "value"),
     State("input-qtd-entregadores", "value"),
     prevent_initial_call=True
 )
-# Funcão a ser chamada ao clicar em gerar entregadores
+
+
+# Funcão a ser chamada ao selecionar um bar ou clicar em gerar entregadores
 def atualizar_entregadores(n_clicks, bar_selecionado_id, qtd_entregadores):
-    # Vê se os campos tao preenchidos
-    if not bar_selecionado_id or not qtd_entregadores:
-        return []
-    # Provisoriamente ta em cima da praca da liberdade
+    if not bar_selecionado_id:
+        return [], dash.no_update
     lat, long = busca_coordenadas_bar(bar_selecionado_id)
     localizacao_restaurante = {"latitude": float(lat), "longitude": float(long)}
+    posicao_restaurante = [localizacao_restaurante["latitude"], localizacao_restaurante["longitude"]]
 
-    entregadores = simulaGeracaoEntregadores(qtd_entregadores, localizacao_restaurante, grafo)
-    
     marcadores = []
-    
-    # Um marker pro restaurante
+    arvoreEntregadores.limpar()
+
+    # Um marker vermelho pro restaurante
     marcadores.append(
         dl.Marker(
-            position=[localizacao_restaurante["latitude"], localizacao_restaurante["longitude"]],
+            position=posicao_restaurante,
+            icon=icone_vermelho,
             children=[dl.Tooltip("Restaurante Selecionado")]
         )
     )
-    
+
+    # Se só selecionou o bar, mostra apenas ele e centraliza o mapa
+    if dash.ctx.triggered_id == "dropdown-bar" or not qtd_entregadores:
+        return marcadores, posicao_restaurante
+
+    entregadores = simulaGeracaoEntregadores(qtd_entregadores, localizacao_restaurante, grafo)
+
     # Adiciona os marcadores dos entregadores gerados
     for i, entregador in enumerate(entregadores):
+        id_entregador = i+1
+        entregador["id"] = id_entregador
+        arvoreEntregadores.inserirNo(id_entregador, entregador["latitude"], entregador["longitude"]) 
         marcadores.append(
             dl.Marker(
                 position=[entregador["latitude"], entregador["longitude"]],
-                children=[dl.Tooltip(f"Entregador {i+1}")]
+                children=[dl.Tooltip(f"Entregador {id_entregador}")]
             )
         )
         
-    return marcadores
+    return marcadores, dash.no_update
+
 
 if __name__ == "__main__":
     Timer(1, lambda: webbrowser.open_new("http://127.0.0.1:8050/")).start()
