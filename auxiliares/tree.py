@@ -81,12 +81,15 @@ class Tree:
         return self.obterIds(no)
 
 
-    def obterIds(self, no):
+    # Enconra dos ids dos entregadores de forma recursiva
+    # custo: O(k * altura), com k sendo o numero de entregadores
+    def obterIds(self, no, encontrados=None):
+        if encontrados is None:
+            encontrados = []
         if no.efolha():
-            return list(no.ids)
-        encontrados = []
+            encontrados.extend(no.ids)
         for filho in no.filhos.values():
-            encontrados.extend(self.obterIds(filho))
+            self.obterIds(filho, encontrados)
         return encontrados
 
 
