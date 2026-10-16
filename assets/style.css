@@ -51,6 +51,11 @@ body {
     --Dash-Fill-Interactive-Strong: #E2480C;
 }
 
+.Select-option {
+    white-space: normal;
+    line-height: 1.2;
+}
+
 .botao {
     margin-top: 20px;
     padding: 10px 16px;

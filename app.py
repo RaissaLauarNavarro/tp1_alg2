@@ -10,11 +10,6 @@ from auxiliares.buscaCoordenadasBar import getCoordenadasBar
 from auxiliares.simularGeracaoEntregadores import simulaGeracaoEntregadores
 from auxiliares.buscarEntregadoresProximos import buscarEntregadores
 from auxiliares.tempoEntrega import tempoEntregas
-# verificar se vai manter abrir o navegador sozinho
-from threading import Timer
-import webbrowser
-
-
 arquivo_bares = "data/bares_com_coordenadas.csv"
 arquivo_mapa_bh = "data/grafo_bh.graphml"
 coordenada_central = (-19.9191, -43.9386)
@@ -96,6 +91,8 @@ app.layout = html.Div(className="app", children=[
             className="input",
             options=opcoes_bares,
             placeholder="Selecione um bar ou restaurante...",
+            optionHeight=85,
+            maxHeight=400,
         ),
         html.Label("Quantidade de entregadores disponíveis:"),
         dcc.Input(id="input-qtd-entregadores", type="number", value=20, className="input"),
@@ -235,7 +232,6 @@ def atualizar_entregadores(n_gerar, n_clicks, bar_selecionado_id, qtd_entregador
 
 
 if __name__ == "__main__":
-    Timer(1, lambda: webbrowser.open_new("http://127.0.0.1:8050/")).start()
-    app.run(host="127.0.0.1", port=8050, debug=False)
+    app.run(host="0.0.0.0", port=8050, debug=False)
 
 
