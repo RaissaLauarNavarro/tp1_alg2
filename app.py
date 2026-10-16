@@ -9,7 +9,7 @@ from auxiliares.descomprime_grafo import descomprime_grafo
 from auxiliares.buscaCoordenadasBar import getCoordenadasBar
 from auxiliares.simularGeracaoEntregadores import simulaGeracaoEntregadores
 from auxiliares.buscarEntregadoresProximos import buscarEntregadores
-from auxiliares.tempoEntrega import tempoEntrega
+from auxiliares.tempoEntrega import tempoEntrega, tempoEntregas
 # verificar se vai manter abrir o navegador sozinho
 from threading import Timer
 import webbrowser
@@ -203,13 +203,18 @@ def atualizar_entregadores(n_gerar, n_clicks, bar_selecionado_id, qtd_entregador
         return dash.no_update, dash.no_update, dash.no_update
 
     entregadoresVermelho, entregadoresCinza = buscarEntregadores(arvoreEntregadores, coordenadasEntregadores, raio, localizacao_restaurante["latitude"], localizacao_restaurante["longitude"])
-    # Calcula o tempo de entrega dos entregadores dentro e fora do raio de busca
-    for i, entregadorV in enumerate(entregadoresVermelho):
-        tempo_minutos = tempoEntrega(coordenadasEntregadores[entregadorV[0]], localizacao_restaurante, grafo) / 60
-        entregadoresVermelho[i] = entregadorV + (tempo_minutos,)
-    for i, entregadorC in enumerate(entregadoresCinza):
-        tempo_minutos = tempoEntrega(coordenadasEntregadores[entregadorC[0]], localizacao_restaurante, grafo) / 60
-        entregadoresCinza[i] = entregadorC + (tempo_minutos,)
+    entregadoresVFormatados = []
+    for entregadorV in entregadoresVermelho:
+        entregadoresVFormatados.append(coordenadasEntregadores[entregadorV[0]])
+    tempo_entregas = tempoEntregas(entregadoresVFormatados, localizacao_restaurante, grafo)
+    for i, tempo_entrega in enumerate(tempo_entregas):
+        entregadoresVermelho[i] += (tempo_entrega/60,)
+    entregadoresCFormatados = []
+    for entregadorC in entregadoresCinza:
+        entregadoresCFormatados.append(coordenadasEntregadores[entregadorC[0]])
+    tempo_entregas = tempoEntregas(entregadoresCFormatados, localizacao_restaurante, grafo)
+    for i, tempo_entrega in enumerate(tempo_entregas):
+        entregadoresCinza[i] += (tempo_entrega/60,)
     idsVermelhos = {id_entregador for id_entregador, _,_ in entregadoresVermelho}
     for id_entregador, posicao in coordenadasEntregadores.items():
         if id_entregador in idsVermelhos:
