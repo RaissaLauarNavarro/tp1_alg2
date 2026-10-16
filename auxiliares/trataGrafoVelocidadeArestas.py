@@ -1,4 +1,3 @@
-# Versão inicial ainda, na teoria teria que rodar isso aqui e substituir o grafo_bh.graphml.gz
 import osmnx as ox
 from descomprime_grafo import descomprime_grafo
 descomprime_grafo()
