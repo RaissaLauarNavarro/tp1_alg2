@@ -19,10 +19,12 @@ def tempoEntregas(entregadores, restaurante, grafo):
     restaurantes = [vertices[num_entregadores] for i in range(num_entregadores)]
     caminhos = ox.routing.shortest_path(grafo, vertices[:num_entregadores], restaurantes, weight="travel_time")
     tempo_total_segundos = []
+    distancias = []
     if caminhos is None:
         return None
     for caminho in caminhos:
         arestas_do_caminho = ox.routing.route_to_gdf(grafo, caminho, weight="travel_time")
         tempo_total_segundos.append(arestas_do_caminho["travel_time"].sum())
+        distancias.append(arestas_do_caminho["length"].sum())
     
-    return tempo_total_segundos
+    return tempo_total_segundos, distancias

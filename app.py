@@ -124,8 +124,9 @@ app.layout = html.Div(className="app", children=[
                 id="tabela-entregadores",
                 columns=[
                     {"name": "ID Entregador", "id": "id", "type": "numeric"},
-                    {"name": "Distância (km)", "id": "dist", "type": "numeric", "format": Format(precision=2, scheme=Scheme.fixed, decimal_delimiter=",")},
+                    {"name": "Distância linha reta (km)", "id": "dist", "type": "numeric", "format": Format(precision=2, scheme=Scheme.fixed, decimal_delimiter=",")},
                     {"name": "Tempo (min)", "id": "eta", "type": "numeric", "format": Format(precision=1, scheme=Scheme.fixed, decimal_delimiter=",")},
+                    {"name": "Distância no grafo (km)", "id": "distreal", "type": "numeric", "format": Format(precision=2, scheme=Scheme.fixed, decimal_delimiter=",")},
                 ],
                 data=[],
                 page_action="none",
@@ -206,16 +207,16 @@ def atualizar_entregadores(n_gerar, n_clicks, bar_selecionado_id, qtd_entregador
     entregadoresVFormatados = []
     for entregadorV in entregadoresVermelho:
         entregadoresVFormatados.append(coordenadasEntregadores[entregadorV[0]])
-    tempo_entregas = tempoEntregas(entregadoresVFormatados, localizacao_restaurante, grafo)
+    tempo_entregas, distancia_entregas = tempoEntregas(entregadoresVFormatados, localizacao_restaurante, grafo)
     for i, tempo_entrega in enumerate(tempo_entregas):
-        entregadoresVermelho[i] += (tempo_entrega/60,)
+        entregadoresVermelho[i] += (tempo_entrega/60,distancia_entregas[i]/1000)
     entregadoresCFormatados = []
     for entregadorC in entregadoresCinza:
         entregadoresCFormatados.append(coordenadasEntregadores[entregadorC[0]])
-    tempo_entregas = tempoEntregas(entregadoresCFormatados, localizacao_restaurante, grafo)
+    tempo_entregas, distancia_entregas = tempoEntregas(entregadoresCFormatados, localizacao_restaurante, grafo)
     for i, tempo_entrega in enumerate(tempo_entregas):
-        entregadoresCinza[i] += (tempo_entrega/60,)
-    idsVermelhos = {id_entregador for id_entregador, _,_ in entregadoresVermelho}
+        entregadoresCinza[i] += (tempo_entrega/60,distancia_entregas[i]/1000)
+    idsVermelhos = {id_entregador for id_entregador, _,_,_ in entregadoresVermelho}
     for id_entregador, posicao in coordenadasEntregadores.items():
         if id_entregador in idsVermelhos:
             icone = icone_vermelho
@@ -224,8 +225,8 @@ def atualizar_entregadores(n_gerar, n_clicks, bar_selecionado_id, qtd_entregador
         marcadores.append(criarMarcadorEntregador(id_entregador, posicao, icone))
 
     tabela = (
-        [{"id": id_entregador, "dist": distancia, "eta": tempo_minutos, "cor": "vermelho"} for id_entregador, distancia, tempo_minutos in entregadoresVermelho] +
-        [{"id": id_entregador, "dist": distancia, "eta": tempo_minutos, "cor": "cinza"} for id_entregador, distancia, tempo_minutos in entregadoresCinza]
+        [{"id": id_entregador, "dist": distancia, "eta": tempo_minutos, "cor": "vermelho", "distreal": distancia_no_grafo} for id_entregador, distancia, tempo_minutos, distancia_no_grafo in entregadoresVermelho] +
+        [{"id": id_entregador, "dist": distancia, "eta": tempo_minutos, "cor": "cinza", "distreal": distancia_no_grafo} for id_entregador, distancia, tempo_minutos, distancia_no_grafo in entregadoresCinza]
     )
     
     return marcadores, dash.no_update, tabela
