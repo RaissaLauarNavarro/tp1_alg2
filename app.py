@@ -6,7 +6,6 @@ from dash import html, Output, Input, dash_table, dcc, State
 from dash.dash_table.Format import Format, Scheme
 from auxiliares.tree import Tree
 from auxiliares.descomprime_grafo import descomprime_grafo
-from auxiliares.funcoesApp import carregarNomes
 from auxiliares.buscaCoordenadasBar import getCoordenadasBar
 from auxiliares.simularGeracaoEntregadores import simulaGeracaoEntregadores
 from auxiliares.buscarEntregadoresProximos import buscarEntregadores
