@@ -9,7 +9,7 @@ from auxiliares.descomprime_grafo import descomprime_grafo
 from auxiliares.buscaCoordenadasBar import getCoordenadasBar
 from auxiliares.simularGeracaoEntregadores import simulaGeracaoEntregadores
 from auxiliares.buscarEntregadoresProximos import buscarEntregadores
-from auxiliares.tempoEntrega import tempoEntrega, tempoEntregas
+from auxiliares.tempoEntrega import tempoEntregas
 # verificar se vai manter abrir o navegador sozinho
 from threading import Timer
 import webbrowser
