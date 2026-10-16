@@ -9,7 +9,7 @@ from auxiliares.descomprime_grafo import descomprime_grafo
 from auxiliares.buscaCoordenadasBar import getCoordenadasBar
 from auxiliares.simularGeracaoEntregadores import simulaGeracaoEntregadores
 from auxiliares.buscarEntregadoresProximos import buscarEntregadores
-
+from auxiliares.tempoEntrega import tempoEntrega
 # verificar se vai manter abrir o navegador sozinho
 from threading import Timer
 import webbrowser
@@ -203,8 +203,14 @@ def atualizar_entregadores(n_gerar, n_clicks, bar_selecionado_id, qtd_entregador
         return dash.no_update, dash.no_update, dash.no_update
 
     entregadoresVermelho, entregadoresCinza = buscarEntregadores(arvoreEntregadores, coordenadasEntregadores, raio, localizacao_restaurante["latitude"], localizacao_restaurante["longitude"])
-
-    idsVermelhos = {id_entregador for id_entregador, _ in entregadoresVermelho}
+    # Calcula o tempo de entrega dos entregadores dentro e fora do raio de busca
+    for i, entregadorV in enumerate(entregadoresVermelho):
+        tempo_minutos = tempoEntrega(coordenadasEntregadores[entregadorV[0]], localizacao_restaurante, grafo) / 60
+        entregadoresVermelho[i] = entregadorV + (tempo_minutos,)
+    for i, entregadorC in enumerate(entregadoresCinza):
+        tempo_minutos = tempoEntrega(coordenadasEntregadores[entregadorC[0]], localizacao_restaurante, grafo) / 60
+        entregadoresCinza[i] = entregadorC + (tempo_minutos,)
+    idsVermelhos = {id_entregador for id_entregador, _,_ in entregadoresVermelho}
     for id_entregador, posicao in coordenadasEntregadores.items():
         if id_entregador in idsVermelhos:
             icone = icone_vermelho
@@ -213,8 +219,8 @@ def atualizar_entregadores(n_gerar, n_clicks, bar_selecionado_id, qtd_entregador
         marcadores.append(criarMarcadorEntregador(id_entregador, posicao, icone))
 
     tabela = (
-        [{"id": id_entregador, "dist": distancia, "cor": "vermelho"} for id_entregador, distancia in entregadoresVermelho] +
-        [{"id": id_entregador, "dist": distancia, "cor": "cinza"} for id_entregador, distancia in entregadoresCinza]
+        [{"id": id_entregador, "dist": distancia, "eta": tempo_minutos, "cor": "vermelho"} for id_entregador, distancia, tempo_minutos in entregadoresVermelho] +
+        [{"id": id_entregador, "dist": distancia, "eta": tempo_minutos, "cor": "cinza"} for id_entregador, distancia, tempo_minutos in entregadoresCinza]
     )
     
     return marcadores, dash.no_update, tabela

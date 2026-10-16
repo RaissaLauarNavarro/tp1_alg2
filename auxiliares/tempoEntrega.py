@@ -1,9 +1,9 @@
 import osmnx as ox
 
 def tempoEntrega(entregador, restaurante, grafo):
-    vertice_entregador, vertice_restaurante = ox.distance.nearest_nodes(grafo, X=[entregador.longitude, restaurante.longitude], Y=[entregador.latitude, restaurante.latitude])
+    vertice_entregador, vertice_restaurante = ox.distance.nearest_nodes(grafo, X=[entregador[1], restaurante["longitude"]], Y=[entregador[0], restaurante["latitude"]])
     caminho = ox.routing.shortest_path(grafo, vertice_entregador, vertice_restaurante, weight="travel_time")
-
+    print(vertice_entregador)
     if caminho is None:
         return None
 
