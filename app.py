@@ -4,30 +4,58 @@ import dash_leaflet as dl
 import osmnx as ox
 from dash import html, Output, Input, dash_table, dcc, State
 from dash.dash_table.Format import Format, Scheme
-from auxiliares.simularGeracaoEntregadores import simulaGeracaoEntregadores
-from auxiliares.descomprime_grafo import descomprime_grafo
-from auxiliares.buscaCoordenadasBar import busca_coordenadas_bar
 from auxiliares.tree import Tree
+from auxiliares.descomprime_grafo import descomprime_grafo
+from auxiliares.funcoesApp import carregarNomes
+from auxiliares.buscaCoordenadasBar import getCoordenadasBar
+from auxiliares.simularGeracaoEntregadores import simulaGeracaoEntregadores
+from auxiliares.buscarEntregadoresProximos import buscarEntregadores
+
 # verificar se vai manter abrir o navegador sozinho
 from threading import Timer
 import webbrowser
 
 
-coordenada_central = (-19.9191, -43.9386)
 arquivo_bares = "data/bares_com_coordenadas.csv"
 arquivo_mapa_bh = "data/grafo_bh.graphml"
-n_padrao = 20
+coordenada_central = (-19.9191, -43.9386)
+
+
 icone_vermelho = {
-    "iconUrl": "https://cdn.jsdelivr.net/gh/pointhi/leaflet-color-markers@master/img/marker-icon-2x-red.png",
-    "shadowUrl": "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png",
-    "iconSize": [25, 41],
-    "iconAnchor": [12, 41],
-    "tooltipAnchor": [16, -28],
-    "shadowSize": [41, 41],
+    "iconUrl": f"https://cdn.jsdelivr.net/gh/pointhi/leaflet-color-markers@master/img/marker-icon-2x-red.png",
+        "shadowUrl": "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png",
+        "iconSize": [25, 41],
+        "iconAnchor": [12, 41],
+        "tooltipAnchor": [16, -28],
+        "shadowSize": [41, 41],
+}
+icone_azul = {
+    "iconUrl": f"https://cdn.jsdelivr.net/gh/pointhi/leaflet-color-markers@master/img/marker-icon-2x-blue.png",
+        "shadowUrl": "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png",
+        "iconSize": [25, 41],
+        "iconAnchor": [12, 41],
+        "tooltipAnchor": [16, -28],
+        "shadowSize": [41, 41],
+}
+icone_cinza = {
+    "iconUrl": f"https://cdn.jsdelivr.net/gh/pointhi/leaflet-color-markers@master/img/marker-icon-2x-grey.png",
+        "shadowUrl": "https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png",
+        "iconSize": [25, 41],
+        "iconAnchor": [12, 41],
+        "tooltipAnchor": [16, -28],
+        "shadowSize": [41, 41],
 }
 
 
-def carregar_nomes(arquivo_bares):
+def criarMarcadorEntregador(id_entregador, posicao, icone):
+    return dl.Marker(
+        position=list(posicao),
+        icon=icone,
+        children=[dl.Tooltip(f"Entregador {id_entregador}")]
+    )
+
+
+def carregarNomes(arquivo_bares):
     bares = pd.read_csv(arquivo_bares, dtype=str, keep_default_na=False)
     
     fantasia = bares["NOME_FANTASIA"].str.strip()
@@ -48,10 +76,15 @@ def carregar_nomes(arquivo_bares):
     bares = bares.sort_values(["grupo", "item", "_id"])
     return [{"label": item, "value": id_bar} for item, id_bar in zip(bares["item"], bares["_id"])]
 
-opcoes_bares = carregar_nomes(arquivo_bares)
+
+# ------------------------------------------------------------------------------------------------------------
+
+
+opcoes_bares = carregarNomes(arquivo_bares)
 descomprime_grafo()
 grafo = ox.load_graphml(arquivo_mapa_bh)
 arvoreEntregadores = Tree()
+coordenadasEntregadores = {}
 
 app = dash.Dash()
 app.layout = html.Div(className="app", children=[
@@ -65,13 +98,13 @@ app.layout = html.Div(className="app", children=[
             options=opcoes_bares,
             placeholder="Selecione um bar ou restaurante...",
         ),
-
-        html.Label("Raio de filtragem:"),
-        dcc.Slider(id="raio", min=0.5, max=2, step=0.5, value=1, marks={0.5: "0,5", 1: "1", 1.5: "1,5", 2: "2",},),
-
         html.Label("Quantidade de entregadores disponíveis:"),
-        dcc.Input(id="input-qtd-entregadores", type="number", value=n_padrao, className="input"),
+        dcc.Input(id="input-qtd-entregadores", type="number", value=20, className="input"),
         html.Button("Gerar Entregadores", id="botao-gerar-entregadores", className="botao", n_clicks=0),
+
+        html.Label("Raio de filtragem (km):"),
+        dcc.Input(id="raio", type="number", value=2.0, min=0.1, step=0.1, className="input"),
+        html.Button("Filtrar Entregadores", id="botao-filtrar-entregadores", className="botao", n_clicks=0),
     ]),
 
     html.Main(className="main", children=[
@@ -89,15 +122,23 @@ app.layout = html.Div(className="app", children=[
  
         html.Section(className="section_tabela", children=[
             dash_table.DataTable(
+                id="tabela-entregadores",
                 columns=[
                     {"name": "ID Entregador", "id": "id", "type": "numeric"},
                     {"name": "Distância (km)", "id": "dist", "type": "numeric", "format": Format(precision=2, scheme=Scheme.fixed, decimal_delimiter=",")},
                     {"name": "Tempo (min)", "id": "eta", "type": "numeric", "format": Format(precision=1, scheme=Scheme.fixed, decimal_delimiter=",")},
                 ],
                 data=[],
-                page_size=10,
+                page_action="none",
+                fixed_rows={"headers": True},
+                style_table={"maxHeight": "35vh", "overflowY": "auto"},
                 sort_action="native",
                 style_as_list_view=True,
+
+                style_data_conditional=[
+                    {"if": {"filter_query": '{cor} = "vermelho"'}, "color": "#d33"},
+                    {"if": {"filter_query": '{cor} = "cinza"'}, "color": "#888"},
+                ]
             ),
         ]),
     ]),
@@ -108,52 +149,78 @@ app.layout = html.Div(className="app", children=[
 @app.callback(
     Output("camada", "children"),
     Output("mapa", "center"),
-    Input("botao-gerar-entregadores", "n_clicks"),
+    Output("tabela-entregadores", "data"),
+    Input("botao-gerar-entregadores", "n_clicks"),    
+    Input("botao-filtrar-entregadores", "n_clicks"),
     Input("dropdown-bar", "value"),
     State("input-qtd-entregadores", "value"),
+    State("raio", "value"),
     prevent_initial_call=True
 )
 
 
 # Funcão a ser chamada ao selecionar um bar ou clicar em gerar entregadores
-def atualizar_entregadores(n_clicks, bar_selecionado_id, qtd_entregadores):
+def atualizar_entregadores(n_gerar, n_clicks, bar_selecionado_id, qtd_entregadores, raio):
     if not bar_selecionado_id:
-        return [], dash.no_update
-    lat, long = busca_coordenadas_bar(bar_selecionado_id)
+        return [], dash.no_update, []
+    lat, long = getCoordenadasBar(bar_selecionado_id)
     localizacao_restaurante = {"latitude": float(lat), "longitude": float(long)}
     posicao_restaurante = [localizacao_restaurante["latitude"], localizacao_restaurante["longitude"]]
 
-    marcadores = []
-    arvoreEntregadores.limpar()
-
-    # Um marker vermelho pro restaurante
-    marcadores.append(
+    # Um marker azul pro restaurante
+    marcadores = [
         dl.Marker(
             position=posicao_restaurante,
-            icon=icone_vermelho,
+            icon=icone_azul,
             children=[dl.Tooltip("Restaurante Selecionado")]
         )
+    ]
+
+    # Mostra o bar selecionado no centro do mapa
+    if dash.ctx.triggered_id == "dropdown-bar":
+        arvoreEntregadores.limpar()
+        coordenadasEntregadores.clear()
+        return marcadores, posicao_restaurante, []
+
+    # Botao gerar: cria novos entregadores e mostra todos em cinza, ainda sem filtrar
+    if dash.ctx.triggered_id == "botao-gerar-entregadores":
+        if not qtd_entregadores:
+            return marcadores, dash.no_update, []
+
+        arvoreEntregadores.limpar()
+        coordenadasEntregadores.clear()
+        entregadores = simulaGeracaoEntregadores(qtd_entregadores, localizacao_restaurante, grafo)
+
+        for i, entregador in enumerate(entregadores):
+            id_entregador = i + 1
+            entregador["id"] = id_entregador
+            coordenadasEntregadores[id_entregador] = (entregador["latitude"], entregador["longitude"])
+            arvoreEntregadores.inserirNo(id_entregador, entregador["latitude"], entregador["longitude"])
+            marcadores.append(criarMarcadorEntregador(id_entregador, coordenadasEntregadores[id_entregador], icone_cinza))
+
+        return marcadores, dash.no_update, []
+
+    if not coordenadasEntregadores or not raio or raio <= 0:
+        return dash.no_update, dash.no_update, dash.no_update
+
+    entregadoresVermelho, entregadoresCinza = buscarEntregadores(arvoreEntregadores, coordenadasEntregadores, raio, localizacao_restaurante["latitude"], localizacao_restaurante["longitude"])
+
+    idsVermelhos = {id_entregador for id_entregador, _ in entregadoresVermelho}
+    for id_entregador, posicao in coordenadasEntregadores.items():
+        if id_entregador in idsVermelhos:
+            icone = icone_vermelho
+        else:
+            icone = icone_cinza
+        marcadores.append(criarMarcadorEntregador(id_entregador, posicao, icone))
+
+    tabela = (
+        [{"id": id_entregador, "dist": distancia, "cor": "vermelho"} for id_entregador, distancia in entregadoresVermelho] +
+        [{"id": id_entregador, "dist": distancia, "cor": "cinza"} for id_entregador, distancia in entregadoresCinza]
     )
+    
+    return marcadores, dash.no_update, tabela
 
-    # Se só selecionou o bar, mostra apenas ele e centraliza o mapa
-    if dash.ctx.triggered_id == "dropdown-bar" or not qtd_entregadores:
-        return marcadores, posicao_restaurante
 
-    entregadores = simulaGeracaoEntregadores(qtd_entregadores, localizacao_restaurante, grafo)
-
-    # Adiciona os marcadores dos entregadores gerados
-    for i, entregador in enumerate(entregadores):
-        id_entregador = i+1
-        entregador["id"] = id_entregador
-        arvoreEntregadores.inserirNo(id_entregador, entregador["latitude"], entregador["longitude"]) 
-        marcadores.append(
-            dl.Marker(
-                position=[entregador["latitude"], entregador["longitude"]],
-                children=[dl.Tooltip(f"Entregador {id_entregador}")]
-            )
-        )
-        
-    return marcadores, dash.no_update
 
 
 if __name__ == "__main__":

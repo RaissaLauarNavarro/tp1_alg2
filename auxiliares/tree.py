@@ -1,13 +1,5 @@
-from geohash import gerarHash
+from auxiliares.geohash import gerarHash
 tamanhoHash = 8
-
-
-def prefixo_comum(prefixo1, prefixo2):
-    tamanho = min(len(prefixo1), len(prefixo2))
-    i = 0
-    while i < tamanho and prefixo1[i] == prefixo2[i]:
-        i += 1
-    return i
 
 
 class No:
@@ -21,6 +13,15 @@ class No:
 
     def efolha(self):
         return not self.filhos
+
+# ----------------------------------------------
+
+def prefixoComum(string1, string2):
+    tamanho = min(len(string1), len(string2))
+    i = 0
+    while i < tamanho and string1[i] == string2[i]:
+        i += 1
+    return i
 
 
 class Tree:
@@ -40,29 +41,40 @@ class Tree:
     def inserirCaractere(self, pai, caracteres, id):
         filho = pai.filhos.get(caracteres[0])
 
-        # Cria um novo nó pai
+        # adiciona o hash direto se não tiver filhos
         if filho is None:
             pai.filhos[caracteres[0]] = No(caracteres, [id])
             return
-
-        prefixo = prefixo_comum(filho.prefixo, caracteres)
-
-        if prefixo == len(filho.prefixo):
-            if filho.efolha():
-                filho.ids.append(id)
-            else:
-                self.inserirCaractere(filho, caracteres[prefixo:], id)
-            return
         
-        temp = No(filho.prefixo[:prefixo], None)
+        # encontra o tamanho do prefixo em comum dos hashs
+        prefixo = prefixoComum(filho.prefixo, caracteres)
+
+        # verifica se todo o prefixo do filho esta no inicio do hash
+        if prefixo == len(filho.prefixo):
+            if prefixo == len(caracteres):
+                filho.ids.append(id)
+                return
+        
+            filho.ids.append(id)
+
+            self.inserirCaractere(filho, caracteres[prefixo:], id)
+            return
+
+        # quando o prefixo comum é menor que o prefixo do filho
+        # cria um nó intermediário entre os prefixos
+        ids_temp = filho.ids + [id]
+        temp = No(filho.prefixo[:prefixo], ids_temp)
+
         filho.prefixo = filho.prefixo[prefixo:]
         temp.filhos[filho.prefixo[0]] = filho
+
         nova_folha = No(caracteres[prefixo:], [id])
         temp.filhos[nova_folha.prefixo[0]] = nova_folha
+
         pai.filhos[caracteres[0]] = temp
 
 
-    def buscarPrefixo(self, caracteres):
+    def buscarIds(self, caracteres):
         no = self.raiz
         resto = caracteres
         while resto:
@@ -70,27 +82,16 @@ class Tree:
             if filho is None:
                 return []
 
-            prefixo = prefixo_comum(filho.prefixo, resto)
+            prefixo = prefixoComum(filho.prefixo, resto)
+
             if prefixo == len(resto):
-                return self.obterIds(filho)
+                return filho.ids
             
             if prefixo < len(filho.prefixo):
                 return []
             no = filho
             resto = resto[prefixo:]
-        return self.obterIds(no)
-
-
-    # Enconra dos ids dos entregadores de forma recursiva
-    # custo: O(k * altura), com k sendo o numero de entregadores
-    def obterIds(self, no, encontrados=None):
-        if encontrados is None:
-            encontrados = []
-        if no.efolha():
-            encontrados.extend(no.ids)
-        for filho in no.filhos.values():
-            self.obterIds(filho, encontrados)
-        return encontrados
+        return no.ids
 
 
     def contarNos(self, no=None):
@@ -100,3 +101,4 @@ class Tree:
         for filho in no.filhos.values():
             total += self.contarNos(filho)
         return total
+

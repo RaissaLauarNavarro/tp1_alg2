@@ -1,5 +1,7 @@
 import pandas as pd
-def busca_coordenadas_bar(id_bar):
+
+
+def getCoordenadasBar(id_bar):
     bares = pd.read_csv("data/bares_com_coordenadas.csv", dtype=str, keep_default_na=False)
     bar = bares[bares["_id"] == id_bar]
     if bar.empty:

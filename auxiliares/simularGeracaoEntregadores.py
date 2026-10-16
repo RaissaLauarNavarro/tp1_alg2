@@ -5,6 +5,7 @@ from shapely.geometry import Point
 from shapely.geometry import LineString
 ox.settings.http_user_agent = "TP1 Algoritmos2 UFMG (raissalgns@ufmg.br)"
 ox.settings.use_cache = True
+
 def simulaGeracaoEntregadores(numero_entregadores, restaurante, grafo):
     # Gera uma normal 2 variada com média na latitude e longitude do restaurante. A matriz de covariancia a principio vai ser a identidade.
     normal = qmc.MultivariateNormalQMC(mean=[restaurante["longitude"], restaurante["latitude"]], cov=[[0.00005, 0], [0, 0.00005]])
@@ -12,6 +13,8 @@ def simulaGeracaoEntregadores(numero_entregadores, restaurante, grafo):
     # Amostramos dessa normal
     entregadores = normal.random(numero_entregadores)
     return ajustaPosicaoEntregadores(entregadores, grafo)
+
+
 def ajustaPosicaoEntregadores(entregadores, grafo):
     # Passamos o grafo, e os vetores da latitude e longitude
     # Vamos encontrar a rua(edge) mais proxima e ajustar a posição para lá. (calcular os nearest_vertices(cruzamentos) seria computacionalmente mais barato, se isso demorar podemos mudar)
