@@ -3,3 +3,4 @@
 *.pyc
 /data/grafo_bh.graphml
 */__pycache__
+*.graphml
