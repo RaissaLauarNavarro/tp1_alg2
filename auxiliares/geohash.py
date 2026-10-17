@@ -13,6 +13,7 @@ def gerarHash(latitude, longitude, niveis=niveis_padrao):
     tamanho = niveis * 5
     geohash = []
 
+    # verifica se o ponto esta em que posição nos quadrantes definidos
     for i in range(tamanho):
         if i % 2 == 0:
             meio = (menor_longitude + maior_longitude) / 2
@@ -31,6 +32,7 @@ def gerarHash(latitude, longitude, niveis=niveis_padrao):
                 geohash.append(0)
                 maior_latitude = meio
 
+    # agrupamento de cinco em cinco caracteres
     geohash_final = ""
     for i in range(0, tamanho, 5):
         numero = 0
