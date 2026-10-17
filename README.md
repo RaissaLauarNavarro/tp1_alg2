@@ -2,6 +2,8 @@
 
 ## Estrutura dos arquivos
 * app.py : arquivo main do projeto, com a construção da interface do app
+* documentacao_tp1.pdf : documentação do trabalho com explicações e testes
+* requeriments.txt : arquivo usado para baixar as bibliotecas necessárias
 * \data : pasta com os arquivos necessários, como o csv de bares/restaurantes e do grafo de bh 
 * \auxiliares : pasta com os scipts de funcionamento do projeto
 * \assets : pasta necessária para a definição do visual da página
@@ -25,4 +27,5 @@ py -3.12 -m venv .venv
 http://localhost:8050
 
 obs: espere a inicialização completa do aplicativo (quando todos os componentes aparem, como a caixa de seleção)
+
 o título da página será Updating enquando os resultados estão sendo carregados
